@@ -1,0 +1,66 @@
+name: Required Files Check (Prod)
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  validate-and-log:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Run required files check
+        run: python3 check_required_files.py
+      
+      - name: Configure AWS credentials
+        if: success()
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      
+      - name: Create CloudWatch log stream
+        if: success()
+        run: |
+          LOG_STREAM_NAME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          echo "LOG_STREAM_NAME=$LOG_STREAM_NAME" >> $GITHUB_ENV
+          
+          aws logs create-log-stream \
+            --log-group-name /github-actions/required-files-checker/prod \
+            --log-stream-name "$LOG_STREAM_NAME" \
+            --region ${{ secrets.AWS_REGION }}
+      
+      - name: Send audit log to CloudWatch
+        if: success()
+        run: |
+          TIMESTAMP=$(date +%s%3N)
+          
+          LOG_MESSAGE=$(cat <<EOF
+          {
+            "workflow": "${{ github.workflow }}",
+            "repository": "${{ github.repository }}",
+            "commit_sha": "${{ github.sha }}",
+            "actor": "${{ github.actor }}",
+            "event": "${{ github.event_name }}",
+            "ref": "${{ github.ref }}",
+            "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+            "status": "success"
+          }
+          EOF
+          )
+          
+          aws logs put-log-events \
+            --log-group-name /github-actions/required-files-checker/prod \
+            --log-stream-name "$LOG_STREAM_NAME" \
+            --log-events timestamp=$TIMESTAMP,message="$LOG_MESSAGE" \
+            --region ${{ secrets.AWS_REGION }}
