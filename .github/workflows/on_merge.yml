@@ -46,7 +46,7 @@ jobs:
           TIMESTAMP=$(date +%s%3N)
           
           aws logs put-log-events \
-            --log-group-name /github-actions/required-files-checker/prod \
+            --log-group-name /github-actions/required-files-checker/beta \
             --log-stream-name "$LOG_STREAM_NAME" \
             --log-events timestamp=$TIMESTAMP,message='{"workflow":"${{ github.workflow }}","repository":"${{ github.repository }}","commit":"${{ github.sha }}","actor":"${{ github.actor }}","status":"success"}' \
             --region ${{ secrets.AWS_REGION }}
