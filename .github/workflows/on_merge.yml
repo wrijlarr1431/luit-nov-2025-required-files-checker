@@ -32,7 +32,7 @@ jobs:
       - name: Create CloudWatch log stream
         if: success()
         run: |
-          LOG_STREAM_NAME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          LOG_STREAM_NAME=$(date -u +"%Y-%m-%d_%H-%M-%S")
           echo "LOG_STREAM_NAME=$LOG_STREAM_NAME" >> $GITHUB_ENV
           
           aws logs create-log-stream \
