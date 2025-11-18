@@ -44,10 +44,9 @@ jobs:
         if: success()
         run: |
           TIMESTAMP=$(date +%s%3N)
-          MESSAGE='{"workflow":"${{ github.workflow }}","repository":"${{ github.repository }}","commit_sha":"${{ github.sha }}","actor":"${{ github.actor }}","event":"${{ github.event_name }}","ref":"${{ github.ref }}","status":"success"}'
-          
+         
           aws logs put-log-events \
             --log-group-name /github-actions/required-files-checker/prod \
             --log-stream-name "$LOG_STREAM_NAME" \
-            --log-events "timestamp=$TIMESTAMP,message=$MESSAGE" \
+            --log-events '[{"timestamp":'"$TIMESTAMP"',"message":"{\"workflow\":\"${{ github.workflow }}\",\"repository\":\"${{ github.repository }}\",\"commit_sha\":\"${{ github.sha }}\",\"actor\":\"${{ github.actor }}\",\"event\":\"${{ github.event_name }}\",\"ref\":\"${{ github.ref }}\",\"status\":\"success\"}"}]' \
             --region ${{ secrets.AWS_REGION }}
